@@ -14,7 +14,7 @@ export PATH="$PATH:$HOME/.local/bin:/ide/bin/remote-cli:$HOME/.nix-profile/bin";
 declare dotfiles_repos=(
     # Defaults to an example template repo, you may remove below line and put your own or not use any at all!
     # If you do not have your own repo yet, you can fork this one as the starting point ;)
-    https://github.com/axonasif/dotfiles
+    https://github.com/djsnipa1/dotfiles-gp-new
 )
 # Overwrite if the DOTFILES_REPOS environment variable is set
 if test -n "${DOTFILES_REPOS:-}"; then {
@@ -43,7 +43,7 @@ declare fish_plugins+=(
 # = TMUX OPTIONS                                  =
 # =================================================
 # Tmux is enabled by default.
-: "${DOTFILES_TMUX:=true}";
+: "${DOTFILES_TMUX:=yes}";
 # Tmux integration for VSCode
 : "${DOTFILES_TMUX_VSCODE:=true}";
 declare -r tmux_first_session_name="gitpod";
@@ -55,11 +55,11 @@ declare -r tmux_first_window_num="1";
 # =================================================
 # The below option will help you easily SSH into
 # your workspace via your local terminal emulator.
-: "${DOTFILES_SPAWN_SSH_PROTO:=true}";
+: "${DOTFILES_SPAWN_SSH_PROTO:=no}";
 # When the below option is true, VSCode will be
 # killed after you've established a SSH connection
 # with the workspace to save RAM and CPU.
-: "${DOTFILES_NO_VSCODE:=false}";
+: "${DOTFILES_NO_VSCODE:=true}";
 
 
 # =================================================
@@ -75,7 +75,7 @@ declare -r tmux_first_window_num="1";
 # Supported value(s): lunarvim, nvchad, doomemacs, spacemacs
 # You may not use any preset when you have your own config.
 # Preset should be based on your EDITOR.
-: "${DOTFILES_EDITOR_PRESET:=lunarvim}";
+: "${DOTFILES_EDITOR_PRESET:=nvchad}";
 
 
 # =================================================
@@ -94,6 +94,7 @@ declare nixpkgs_level_1+=(
     nixpkgs.ripgrep
     nixpkgs.fd
     nixpkgs.fzf
+    nixpkgs.lf
 )
 # =================================================
 # = SEMI-BIG PACKAGES                             =
@@ -122,9 +123,10 @@ declare nixpkgs_level_3+=(
     nixpkgs.p7zip
     nixpkgs.rsync # Useful for 'bashbox livetest' command
     nixpkgs.helm
-    nixpkgs.kubectl
     nixpkgs.k9s
-    nixpkgs.google-cloud-sdk
+    nixpkgs.nixfmt
+    nixpkgs.lazygit
+    nixpkgs.lazydocker
 )
 if command::exists apt; then {
     aptpkgs_level_1+=(
