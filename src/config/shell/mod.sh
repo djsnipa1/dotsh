@@ -107,9 +107,15 @@ function config::shell::hijack_gitpod_task_terminals {
 			printf '%s="%s"\n' tmux_first_session_name "$tmux_first_session_name" \
 								tmux_first_window_num "$tmux_first_window_num" \
 								dotfiles_notmux_sig "$dotfiles_notmux_sig" \
-								PROMPT_COMMAND 'tmux::inject; $PROMPT_COMMAND';
+								PROMPT_COMMAND 'tmux::inject; $PROMPT_COMMAND' \
+                RC "$RC" \
+                BGREEN "$BGREEN" \
+                BRED "$BRED" \
+                YELLOW "$YELLOW";
+
 			printf '%s="${%s:-%s}"\n' DOTFILES_TMUX DOTFILES_TMUX "${DOTFILES_TMUX:-true}" \
 										DOTFILES_TMUX_NO_VSCODE DOTFILES_TMUX_NO_VSCODE "${DOTFILES_TMUX_NO_VSCODE:-false}";
+
 			printf '%s\n' "$(declare -f "${function_exports[@]}")";
 		} >> "$HOME/.bashrc";
 	} fi
@@ -162,7 +168,16 @@ function config::shell::set_default_vscode_profile() {
 			shell="$(get::default_shell)" && shell="${shell##*/}";
 			cat <<-JSON
 			{
-				"terminal.integrated.defaultProfile.linux": "$shell"
+				"terminal.integrated.profiles.linux": {
+					"customshell": {
+						"path": "bash",
+						"args": [
+							"-c",
+							"until cmd=\"\$(command -v $shell)\" && test -x \"\$cmd\"; do sleep 1; done; AWAIT_SHIM_PRINT_INDICATOR=true exec \$cmd -l"
+						]
+					}
+				},
+				"terminal.integrated.defaultProfile.linux": "customshell"
 			}
 			JSON
 		} fi
