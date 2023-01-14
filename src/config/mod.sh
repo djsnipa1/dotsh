@@ -68,6 +68,7 @@ function config::cli() {
   }
 
   function cli::wizard() {
+    declare gitpod_preferences="https://gitpod.io/preferences";
     PS3="$(echo -e "\n${RED}#${RC} Enter your choice number > ")";
 
     # Human friendly options for preview
@@ -193,7 +194,7 @@ function config::cli() {
 
     if is::gitpod && ! test -e "$HOME/.dotfiles/src/variables.sh"; then {
 
-      read -n 1 -r -p "$(echo -e ">> Do you want to fork this repo and setup it for Gitpod? [Y/n] ")";
+      read -n 1 -r -p "$(echo -e ">> Do you want to fork (GitHub only) this repo and setup it for Gitpod? [Y/n] ")";
       printf '\n';
       declare target_repo_url="$___self_REPOSITORY";
 
@@ -208,22 +209,14 @@ function config::cli() {
 
         # Login into GitHub if needed
         if ! gh auth status >/dev/null 2>&1; then {
-          get_token() {
-            declare token;
-            token="$(printf '%s\n' host=github.com | gp credential-helper get | awk -F'password=' '{print $2}')" || {
-              log::error "Failed to retrieve Github auth token from 'gp credential-helper'" || exit;
-            };
-          }
-
-          get_token;
-
           log::info "Trying to login into gh CLI";
 
-          until printf '%s\n' "$token" | gh auth login --with-token; do 
-            log::warn "Failed to login to Github via gh CLI." \
-                      "Please make sure you have the necessary ^ scopes enabled at ${ORANGE}https://gitpod.io/integrations > GitHub > Edit permissions${RC}";
+          until printf '%s\n' "host=github.com" \
+                | gp credential-helper get \
+                | awk -F'password=' '{print $2}' \
+                | gh auth login --with-token; do 
+            echo -e "Failed to login to GitHub via gh CLI.\nPlease make sure you have the necessary ^ scopes enabled at ${ORANGE}https://gitpod.io/integrations > GitHub > Edit permissions${RC}";
             read -n 1 -r -p "$(echo -e "Press ${GREEN}Enter${RC} to try again after you've fixed the permissions...")";
-            get_token
           done
         } fi
 
@@ -246,6 +239,7 @@ function config::cli() {
         # Create fork
         if ! get_target_repo_url >/dev/null 2>&1; then {
           gh repo fork "$___self_REPOSITORY" --clone=false;
+          get_target_repo_url;
         } fi
 
         # Update git remotes
@@ -264,7 +258,7 @@ function config::cli() {
         log::info "That's fine too! But feel free to fork later if you want to persist your customizations!";
       } fi
 
-      log::info "Go to ${ORANGE}https://gitpod.io/preferences${RC} and set ${BGREEN}${target_repo_url}${RC} in the bottom URL field if you haven't yet";
+      log::info "Go to ${ORANGE}${gitpod_preferences}${RC} and set ${BGREEN}${target_repo_url}${RC} in the bottom URL field if you haven't yet";
 
     } fi
 
@@ -281,9 +275,12 @@ function config::cli() {
       git commit -am 'Update dotsh config' 1>/dev/null;
 
       log::info "Pushing the changes to $target_repo_url";
+      git pull --ff --no-edit 1>/dev/null;
       git push origin main;
     } fi
 
+    log::info "Now, dotsh will be installed for all new workspaces if you added your dotsh repo to ${gitpod_preferences}";
+    log::info "Just create a new workspace to see it in action!";
   }
 
   function cli::rclone() {

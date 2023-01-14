@@ -3,11 +3,10 @@ function config::scm_cli() {
     local token;
 
     # Wait for gh to be installed via nix at userland_tools.sh:leveltwo_pkgs
-    await::until_true command::exists gh;
+    await::until_true command::exists "${gitpod_scm_cli}";
+    await::for_gitpod_workspace_ready;
 
     # Login into scm_cli (i.e. gh or glab)
-    await::for_vscode_ide_start;
-
     declare -a scm_cli_args=("${gitpod_scm_cli}" auth login);
     declare scm_host;
     case "$gitpod_scm_cli" in
@@ -15,6 +14,9 @@ function config::scm_cli() {
             scm_cli_args+=(
                 --with-token
             )
+            if test -v DOTFILES_GITHUB_TOKEN; then {
+                log::info "Using \$DOTFILES_GITHUB_TOKEN";
+            } fi
             token="${DOTFILES_GITHUB_TOKEN:-}";
             scm_host="github.com";
         ;;
@@ -22,6 +24,9 @@ function config::scm_cli() {
             scm_cli_args+=(
                 --stdin
             )
+            if test -v DOTFILES_GITLAB_TOKEN; then {
+                log::info "Using \$DOTFILES_GITLAB_TOKEN";
+            } fi
             token="${DOTFILES_GITLAB_TOKEN:-}";
             scm_host="gitlab.com";
         ;;
@@ -32,7 +37,7 @@ function config::scm_cli() {
         local tries=1;
         until printf '%s\n' "$token" | "${scm_cli_args[@]}"; do {
             if test $tries -gt 2; then {
-                log::error "Failed to authenticate to 'gh' CLI with 'gp' credentials after trying for $tries times with ${token:0:9}" 1 || exit;
+                log::error "Failed to authenticate to 'gh' CLI with 'gp' credentials after trying for $tries times with ${token:0:9}" 1 || return;
                 break;
             } fi
             ((tries++));
@@ -40,6 +45,8 @@ function config::scm_cli() {
             continue;
         } done
     } else {
-        log::error "Failed to get auth token for gh" || exit 1;
+        log::error "Failed to get auth token for ${gitpod_scm_cli}" 1 || return;
     } fi
+
+    log::info "Logged into ${scm_host^} via ${gitpod_scm_cli} CLI";
 }

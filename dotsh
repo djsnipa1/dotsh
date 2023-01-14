@@ -89,9 +89,13 @@ main@bashbox%dotsh ()
     };
     function livetest () 
     { 
+        function docker () 
+        { 
+            DOCKER_BUILDKIT=1 command docker "$@"
+        };
         case "${1:-}" in 
             "minimg")
-                ___self_CONTAINER_IMAGE="axonasif/dotfiles-testing-min:latest"
+                CONTAINER_IMAGE="axonasif/dotfiles-testing-min:latest"
             ;;
             "ws")
                 function trim_leading_trailing () 
@@ -132,12 +136,12 @@ main@bashbox%dotsh ()
                                             };
                                         fi;
                                         declare local_container_image_name="workspace-image";
-                                        docker built -t "$local_container_image_name" -f "$custom_dockerfile" "$GITPOD_REPO_ROOT";
-                                        ___self_CONTAINER_IMAGE="$local_container_image_name"
+                                        docker build -t "$local_container_image_name" -f "$custom_dockerfile" "$GITPOD_REPO_ROOT";
+                                        CONTAINER_IMAGE="$local_container_image_name"
                                     };
                                 else
                                     { 
-                                        ___self_CONTAINER_IMAGE="$(trim_leading_trailing "$res")"
+                                        CONTAINER_IMAGE="$(trim_leading_trailing "$res")"
                                     };
                                 fi
                             };
@@ -252,7 +256,7 @@ main@bashbox%dotsh ()
             fi ) & disown;
             if test "${DOTFILES_TMUX:-true}" == true; then
                 { 
-                    ___self_AWAIT_SHIM_PRINT_INDICATOR=true exec tmux attach
+                    AWAIT_SHIM_PRINT_INDICATOR=true exec tmux attach
                 };
             else
                 { 
@@ -268,8 +272,9 @@ main@bashbox%dotsh ()
             fi
         };
         docker_args+=(/bin/bash -li);
-        docker "${docker_args[@]}" -c "$(printf "%s\n" "$(declare -f startup_command)" "startup_command")";
-        docker container prune -f > /dev/null 2>&1 & disown
+        ( sleep 2 docker container prune -f > /dev/null 2>&1 ) & disown;
+        rm -f /tmp/.{build,install}.lock;
+        exec docker "${docker_args[@]}" -c "$(printf "%s\n" "$(declare -f startup_command)" "startup_command")"
     };
     function log::info () 
     { 
@@ -1142,6 +1147,10 @@ main@bashbox%dotsh ()
                 gp ports await 23000 > /dev/null
             };
         fi
+    };
+    function await::for_gitpod_workspace_ready () 
+    { 
+        await::for_file_existence "$workspace_dir/.gitpod/ready"
     };
     function await::create_shim () 
     { 
@@ -2385,7 +2394,7 @@ EOF
                     };
                 fi;
             fi;
-            await::for_file_existence "$workspace_dir/.gitpod/ready";
+            await::for_gitpod_workspace_ready;
             cd "${GITPOD_REPO_ROOT:-}";
             function jqw () 
             { 
@@ -2446,7 +2455,7 @@ EOF
     };
     function config::shell::bash () 
     { 
-        todo
+        return
     };
     function config::shell::fish () 
     { 
@@ -2660,18 +2669,28 @@ EOF
     function config::scm_cli () 
     { 
         local token;
-        await::until_true command::exists gh;
-        await::for_vscode_ide_start;
+        await::until_true command::exists "${gitpod_scm_cli}";
+        await::for_gitpod_workspace_ready;
         declare -a scm_cli_args=("${gitpod_scm_cli}" auth login);
         declare scm_host;
         case "$gitpod_scm_cli" in 
             "gh")
                 scm_cli_args+=(--with-token);
+                if test -v DOTFILES_GITHUB_TOKEN; then
+                    { 
+                        log::info "Using \$DOTFILES_GITHUB_TOKEN"
+                    };
+                fi;
                 token="${DOTFILES_GITHUB_TOKEN:-}";
                 scm_host="github.com"
             ;;
             "glab")
                 scm_cli_args+=(--stdin);
+                if test -v DOTFILES_GITLAB_TOKEN; then
+                    { 
+                        log::info "Using \$DOTFILES_GITLAB_TOKEN"
+                    };
+                fi;
                 token="${DOTFILES_GITLAB_TOKEN:-}";
                 scm_host="gitlab.com"
             ;;
@@ -2683,7 +2702,7 @@ EOF
                     { 
                         if test $tries -gt 2; then
                             { 
-                                log::error "Failed to authenticate to 'gh' CLI with 'gp' credentials after trying for $tries times with ${token:0:9}" 1 || exit;
+                                log::error "Failed to authenticate to 'gh' CLI with 'gp' credentials after trying for $tries times with ${token:0:9}" 1 || return;
                                 break
                             };
                         fi;
@@ -2695,9 +2714,10 @@ EOF
             };
         else
             { 
-                log::error "Failed to get auth token for gh" || exit 1
+                log::error "Failed to get auth token for ${gitpod_scm_cli}" 1 || return
             };
-        fi
+        fi;
+        log::info "Logged into ${scm_host^} via ${gitpod_scm_cli} CLI"
     };
     function config::editor () 
     { 
@@ -2753,7 +2773,7 @@ EOF
     };
     function editor::emacs::doom () 
     { 
-        todo
+        return
     };
     function editor::emacs::space () 
     { 
@@ -2785,7 +2805,7 @@ EOF
     };
     function editor::neovim::nvchad () 
     { 
-        todo
+        return
     };
     function config::cli () 
     { 
@@ -2840,6 +2860,7 @@ EOF
         };
         function cli::wizard () 
         { 
+            declare gitpod_preferences="https://gitpod.io/preferences";
             PS3="$(echo -e "\n${RED}#${RC} Enter your choice number > ")";
             function human_machine_friendly () 
             { 
@@ -2936,7 +2957,7 @@ EOF
             cd "$dotfiles_sh_dir";
             if is::gitpod && ! test -e "$HOME/.dotfiles/src/variables.sh"; then
                 { 
-                    read -n 1 -r -p "$(echo -e ">> Do you want to fork this repo and setup it for Gitpod? [Y/n] ")";
+                    read -n 1 -r -p "$(echo -e ">> Do you want to fork (GitHub only) this repo and setup it for Gitpod? [Y/n] ")";
                     printf '\n';
                     declare target_repo_url="$___self_REPOSITORY";
                     if [ "${REPLY,,}" = y ]; then
@@ -2949,19 +2970,10 @@ EOF
                             fi;
                             if ! gh auth status > /dev/null 2>&1; then
                                 { 
-                                    function get_token () 
-                                    { 
-                                        declare token;
-                                        token="$(printf '%s\n' host=github.com | gp credential-helper get | awk -F'password=' '{print $2}')" || { 
-                                            log::error "Failed to retrieve Github auth token from 'gp credential-helper'" || exit
-                                        }
-                                    };
-                                    get_token;
                                     log::info "Trying to login into gh CLI";
-                                    until printf '%s\n' "$token" | gh auth login --with-token; do
-                                        log::warn "Failed to login to Github via gh CLI." "Please make sure you have the necessary ^ scopes enabled at ${ORANGE}https://gitpod.io/integrations > GitHub > Edit permissions${RC}";
+                                    until printf '%s\n' "host=github.com" | gp credential-helper get | awk -F'password=' '{print $2}' | gh auth login --with-token; do
+                                        echo -e "Failed to login to GitHub via gh CLI.\nPlease make sure you have the necessary ^ scopes enabled at ${ORANGE}https://gitpod.io/integrations > GitHub > Edit permissions${RC}";
                                         read -n 1 -r -p "$(echo -e "Press ${GREEN}Enter${RC} to try again after you've fixed the permissions...")";
-                                        get_token;
                                     done
                                 };
                             fi;
@@ -2982,7 +2994,8 @@ EOF
                             };
                             if ! get_target_repo_url > /dev/null 2>&1; then
                                 { 
-                                    gh repo fork "$___self_REPOSITORY" --clone=false
+                                    gh repo fork "$___self_REPOSITORY" --clone=false;
+                                    get_target_repo_url
                                 };
                             fi;
                             log::info "Updating git remotes for $dotfiles_sh_dir";
@@ -3003,7 +3016,7 @@ EOF
                             log::info "That's fine too! But feel free to fork later if you want to persist your customizations!"
                         };
                     fi;
-                    log::info "Go to ${ORANGE}https://gitpod.io/preferences${RC} and set ${BGREEN}${target_repo_url}${RC} in the bottom URL field if you haven't yet"
+                    log::info "Go to ${ORANGE}${gitpod_preferences}${RC} and set ${BGREEN}${target_repo_url}${RC} in the bottom URL field if you haven't yet"
                 };
             fi;
             read -n 1 -r -p "$(echo -e ">> Do you want to commit and push the changes? [Y/n] ")";
@@ -3016,9 +3029,12 @@ EOF
                     log::info "Committing the changes on $dotfiles_sh_dir";
                     git commit -am 'Update dotsh config' > /dev/null;
                     log::info "Pushing the changes to $target_repo_url";
+                    git pull --ff --no-edit > /dev/null;
                     git push origin main
                 };
-            fi
+            fi;
+            log::info "Now, dotsh will be installed for all new workspaces if you added your dotsh repo to ${gitpod_preferences}";
+            log::info "Just create a new workspace to see it in action!"
         };
         function cli::rclone () 
         { 
