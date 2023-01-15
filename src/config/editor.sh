@@ -20,6 +20,9 @@ function config::editor() {
             "nvchad")
                 editor::neovim::nvchad;
             ;;
+            "nvpunks")
+                editor::neovim::nvpunks;
+            ;;
         esac
         
         if ! command::exists lvim; then {
@@ -97,6 +100,17 @@ function editor::neovim::lunar {
     # 	nvim --headless -c 'autocmd User PackerComplete quitall' -c 'PackerSync' 1>/dev/null;
     # } done
 }
+
+function editor::neovim::nvpunks {
+    declare clone_dir="$HOME/.config/nvim";
+
+    if test -e "$clone_dir/"; then {
+        log::warn "$clone_dir already exists, not going to install any preset";
+    } else {
+	git clone https://gitlab.com/gabmus/nvpunk "$clone_dir" 1>/dev/null;
+    } fi
+}
+
 
 function editor::neovim::nvchad {
     return;

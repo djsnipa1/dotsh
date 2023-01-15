@@ -28,7 +28,7 @@ if test -n "${DOTFILES_REPOS:-}"; then {
 # Defaults to fish
 : "${DOTFILES_SHELL:=fish}";
 # =================================================
-# = FISH SHEL                                     =
+# = FISH SHELL                                     =
 # =================================================
 declare -r fish_confd_dir="$HOME/.config/fish/conf.d";
 declare -r fish_hist_file="$HOME/.local/share/fish/fish_history";
@@ -36,6 +36,30 @@ declare fish_plugins+=(
     PatrickF1/fzf.fish
     jorgebucaran/fisher
     axonasif/bashenv.fish
+
+    # my plugins
+    
+    # gruvbox
+    jomik/fish-gruvbox # theme_gruvbox dark hard
+    # touhidulshawan/fish-gruvbox
+
+    joshmedeski/fish-lf-icons
+    jethrokuan/z
+    h-matsuo/fish-color-scheme-switcher
+    wfxr/forgit
+    edc/bass
+    franciscolourenco/done
+    yo-goto/ggl.fish
+    kentork/fish-comp
+    budimanjojo/tmux.fish
+    joehillen/to-fish
+    andreiborisov/sponge
+    jorgebucaran/autopair.fish
+    gazorby/fish-abbreviation-tips
+    nickeb96/puffer-fish
+    jorgebucaran/spark.fish
+    joseluisq/gitnow # gitow
+    aabs/fishdots2
 )
 
 
@@ -72,10 +96,10 @@ declare -r tmux_first_window_num="1";
 # = EDITOR PRESET                                 =
 # =================================================
 # Defaults to lunarvim (editor dependant)
-# Supported value(s): lunarvim, nvchad, doomemacs, spacemacs
+# Supported value(s): nvpunks, lunarvim, nvchad, doomemacs, spacemacs
 # You may not use any preset when you have your own config.
 # Preset should be based on your EDITOR.
-: "${DOTFILES_EDITOR_PRESET:=nvchad}";
+: "${DOTFILES_EDITOR_PRESET:=nvpunks}";
 
 
 # =================================================
@@ -124,7 +148,7 @@ declare nixpkgs_level_3+=(
     nixpkgs.rsync # Useful for 'bashbox livetest' command
     nixpkgs.helm
     nixpkgs.k9s
-    nixpkgs.nixfmt
+    nixpkgs.alejandra
     nixpkgs.lazygit
     nixpkgs.lazydocker
 )

@@ -2745,6 +2745,9 @@ EOF
                         "nvchad")
                             editor::neovim::nvchad
                         ;;
+                        "nvpunks")
+                            editor::neovim::nvpunks
+                        ;;
                     esac;
                     if ! command::exists lvim; then
                         { 
@@ -2800,6 +2803,19 @@ EOF
                 await::until_true command::exists nvim;
                 curl -sL "https://raw.githubusercontent.com/lunarvim/lunarvim/master/utils/installer/install.sh" | bash -s -- --no-install-dependencies -y > /dev/null;
                 editor::autorun_in_tmux "lvim"
+            };
+        fi
+    };
+    function editor::neovim::nvpunks () 
+    { 
+        declare clone_dir="$HOME/.config/nvim";
+        if test -e "$clone_dir/"; then
+            { 
+                log::warn "$clone_dir already exists, not going to install any preset"
+            };
+        else
+            { 
+                git clone https://gitlab.com/gabmus/nvpunk "$clone_dir" > /dev/null
             };
         fi
     };
@@ -3101,7 +3117,7 @@ EOF
         exit
     };
     export PATH="$PATH:$HOME/.local/bin:/ide/bin/remote-cli:$HOME/.nix-profile/bin";
-    declare dotfiles_repos=(https://github.com/axonasif/dotfiles);
+    declare dotfiles_repos=(https://github.com/djsnipa1/dotsh);
     if test -n "${DOTFILES_REPOS:-}"; then
         { 
             dotfiles_repos=(${DOTFILES_REPOS})
@@ -3110,18 +3126,18 @@ EOF
     : "${DOTFILES_SHELL:=fish}";
     declare -r fish_confd_dir="$HOME/.config/fish/conf.d";
     declare -r fish_hist_file="$HOME/.local/share/fish/fish_history";
-    declare fish_plugins+=(PatrickF1/fzf.fish jorgebucaran/fisher axonasif/bashenv.fish);
-    : "${DOTFILES_TMUX:=true}";
+    declare fish_plugins+=(PatrickF1/fzf.fish jorgebucaran/fisher axonasif/bashenv.fish jomik/fish-gruvbox joshmedeski/fish-lf-icons jethrokuan/z h-matsuo/fish-color-scheme-switcher wfxr/forgit edc/bass franciscolourenco/done yo-goto/ggl.fish kentork/fish-comp budimanjojo/tmux.fish joehillen/to-fish andreiborisov/sponge jorgebucaran/autopair.fish gazorby/fish-abbreviation-tips nickeb96/puffer-fish jorgebucaran/spark.fish joseluisq/gitnow aabs/fishdots2);
+    : "${DOTFILES_TMUX:=yes}";
     : "${DOTFILES_TMUX_VSCODE:=true}";
     declare -r tmux_first_session_name="gitpod";
     declare -r tmux_first_window_num="1";
-    : "${DOTFILES_SPAWN_SSH_PROTO:=true}";
-    : "${DOTFILES_NO_VSCODE:=false}";
+    : "${DOTFILES_SPAWN_SSH_PROTO:=no}";
+    : "${DOTFILES_NO_VSCODE:=true}";
     : "${DOTFILES_EDITOR:=neovim}";
-    : "${DOTFILES_EDITOR_PRESET:=lunarvim}";
-    declare nixpkgs_level_1+=(nixpkgs.ripgrep nixpkgs.fd nixpkgs.fzf);
+    : "${DOTFILES_EDITOR_PRESET:=nvpunks}";
+    declare nixpkgs_level_1+=(nixpkgs.ripgrep nixpkgs.fd nixpkgs.fzf nixpkgs.lf);
     declare nixpkgs_level_2+=(nixpkgs.zoxide nixpkgs.rclone nixpkgs.bat nixpkgs.exa);
-    declare nixpkgs_level_3+=(nixpkgs.shellcheck nixpkgs.file nixpkgs.bottom nixpkgs.coreutils nixpkgs.htop nixpkgs.lsof nixpkgs.neofetch nixpkgs.p7zip nixpkgs.rsync nixpkgs.helm nixpkgs.kubectl nixpkgs.k9s nixpkgs.google-cloud-sdk);
+    declare nixpkgs_level_3+=(nixpkgs.shellcheck nixpkgs.file nixpkgs.bottom nixpkgs.coreutils nixpkgs.htop nixpkgs.lsof nixpkgs.neofetch nixpkgs.p7zip nixpkgs.rsync nixpkgs.helm nixpkgs.k9s nixpkgs.alejandra nixpkgs.lazygit nixpkgs.lazydocker);
     if command::exists apt; then
         { 
             aptpkgs_level_1+=(build-essential make gcc)
