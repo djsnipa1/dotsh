@@ -2795,7 +2795,7 @@ EOF
     { 
         if test -e "$HOME/.config/nvim"; then
             { 
-                log::warn "~/.config/nvim exists, so not installing any preset"
+                log::warn "$HOME/.config/nvim exists, so not installing any preset"
             };
         else
             { 

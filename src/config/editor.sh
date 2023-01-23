@@ -4,27 +4,27 @@ function config::editor() {
 
     if editor::is "emacs"; then {
         case "${DOTFILES_EDITOR_PRESET:-spacemacs}" in
-            "spacemacs")
+        "spacemacs")
                 editor::emacs::space;
             ;;
-            "doomemacs")
+        "doomemacs")
                 editor::emacs::doom;
             ;;
         esac
         editor::autorun_in_tmux "$HOME/.nix-profile/bin/emacs";
     } elif editor::is "neovim"; then {
         case "${DOTFILES_EDITOR_PRESET:-lunarvim}" in
-            "lunarvim")
+        "lunarvim")
                 editor::neovim::lunar;
             ;;
-            "nvchad")
+        "nvchad")
                 editor::neovim::nvchad;
             ;;
-            "nvpunks")
+        "nvpunks")
                 editor::neovim::nvpunks;
             ;;
         esac
-        
+
         if ! command::exists lvim; then {
             editor::autorun_in_tmux "nvim";
         } fi
@@ -81,7 +81,7 @@ function editor::neovim::lunar {
 
     # Install LunarVim as an example config
     if test -e "$HOME/.config/nvim"; then {
-        log::warn "~/.config/nvim exists, so not installing any preset";
+        log::warn "$HOME/.config/nvim exists, so not installing any preset";
     } else {
         # if is::cde; then {
         # 	NOCLOBBER=true KEEP=true SHIM_MIRROR="$HOME/.local/bin/lvim" await::create_shim "$lvim_exec_path";
@@ -94,7 +94,7 @@ function editor::neovim::lunar {
         editor::autorun_in_tmux "lvim";
     } fi
 
-  # CLOSE=true await::create_shim "$lvim_exec_path";
+    # CLOSE=true await::create_shim "$lvim_exec_path";
 
     # for _t in {1..2}; do {
     # 	nvim --headless -c 'autocmd User PackerComplete quitall' -c 'PackerSync' 1>/dev/null;
@@ -107,7 +107,7 @@ function editor::neovim::nvpunks {
     if test -e "$clone_dir/"; then {
         log::warn "$clone_dir already exists, not going to install any preset";
     } else {
-	git clone https://gitlab.com/gabmus/nvpunk "$clone_dir" 1>/dev/null;
+        git clone https://gitlab.com/gabmus/nvpunk "$clone_dir" 1>/dev/null;
     } fi
 }
 
