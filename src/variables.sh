@@ -99,7 +99,7 @@ declare -r tmux_first_window_num="1";
 # Supported value(s): nvpunks, lunarvim, nvchad, doomemacs, spacemacs
 # You may not use any preset when you have your own config.
 # Preset should be based on your EDITOR.
-: "${DOTFILES_EDITOR_PRESET:=nvpunks}";
+: "${DOTFILES_EDITOR_PRESET:=nvchad}";
 
 
 # =================================================

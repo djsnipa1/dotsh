@@ -113,5 +113,12 @@ function editor::neovim::nvpunks {
 
 
 function editor::neovim::nvchad {
-    return;
+    declare clone_dir="$HOME/.config/nvim";
+
+    if test -e "$clone_dir/"; then {
+        log::warn "$clone_dir already exists, not going to install any preset";
+    } else {
+    git clone https://github.com/NvChad/NvChad "$clone_dir" --depth 1 1>/dev/null;
+    } fi
+    # return;
 }
