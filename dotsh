@@ -276,14 +276,7 @@ main@bashbox%dotsh ()
         rm -f /tmp/.{build,install}.lock;
         exec docker "${docker_args[@]}" -c "$(printf "%s\n" "$(declare -f startup_command)" "startup_command")"
     };
-    function log::info () 
-    { 
-        printf "[%%%%%%] \033[1;37mINFO\033[0m: %b%s%b\n" "$@"
-    };
-    function log::warn () 
-    { 
-        printf "[***] \033[1;37mWARN\033[0m: %b%s%b\n" "$@" 1>&2
-    };
+    ause std::print::log;
     function sleep () 
     { 
         [[ -n "${_snore_fd:-}" ]] || { 
